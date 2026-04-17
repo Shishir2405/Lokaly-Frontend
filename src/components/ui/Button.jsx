@@ -1,27 +1,37 @@
-import { motion } from 'framer-motion';
-import { cn } from '../../lib/cn';
+import { motion } from "framer-motion";
+import { cn } from "../../lib/cn";
 
 const variants = {
-  primary: 'bg-coral text-white hover:bg-coral/90 shadow-pop',
-  secondary: 'bg-ink text-cream hover:bg-ink/90',
-  ghost: 'bg-white/60 backdrop-blur text-ink hover:bg-white',
-  soft: 'bg-peach text-ink hover:bg-peach/80',
-  mint: 'bg-mint text-ink hover:bg-mint/80',
-  outline: 'border-2 border-ink text-ink hover:bg-ink hover:text-cream',
+  primary: "bg-ink text-cream hover:bg-ink/90",
+  coral: "bg-coral text-white hover:bg-coral/90",
+  secondary: "bg-cream text-ink border border-ink/10 hover:border-ink/20",
+  ghost:
+    "bg-white/60 backdrop-blur text-ink hover:bg-white border border-ink/5",
+  soft: "bg-peach text-ink hover:bg-peach/80",
+  mint: "bg-mint text-ink hover:bg-mint/80",
+  outline: "border border-ink/80 text-ink hover:bg-ink hover:text-cream",
 };
 
 const sizes = {
-  sm: 'px-4 py-2 text-sm',
-  md: 'px-6 py-3 text-base',
-  lg: 'px-8 py-4 text-lg',
-  xl: 'px-10 py-5 text-xl',
-  icon: 'w-11 h-11 grid place-items-center',
+  sm: "px-3 py-1.5 text-[11px] gap-1.5",
+  md: "px-4 py-2 text-xs gap-1.5",
+  lg: "px-5 py-2.5 text-xs gap-2",
+  xl: "px-6 py-3 text-sm gap-2",
+  icon: "w-8 h-8 grid place-items-center",
+};
+
+const iconSizes = {
+  sm: "text-sm",
+  md: "text-sm",
+  lg: "text-base",
+  xl: "text-base",
+  icon: "text-base",
 };
 
 export function Button({
   as: Comp = motion.button,
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   leftIcon,
   rightIcon,
   className,
@@ -30,20 +40,20 @@ export function Button({
 }) {
   return (
     <Comp
-      whileHover={{ y: -2 }}
-      whileTap={{ scale: 0.96 }}
-      transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: "spring", stiffness: 380, damping: 24 }}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-full font-jakarta font-semibold transition-colors focus:outline-none focus:ring-4 focus:ring-peach/60 disabled:opacity-50 disabled:pointer-events-none',
+        "inline-flex items-center justify-center rounded-full font-jakarta font-semibold tracking-tight transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30 disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap",
         variants[variant],
         sizes[size],
-        className
+        className,
       )}
       {...rest}
     >
-      {leftIcon && <span className="text-lg">{leftIcon}</span>}
+      {leftIcon && <span className={iconSizes[size]}>{leftIcon}</span>}
       {children}
-      {rightIcon && <span className="text-lg">{rightIcon}</span>}
+      {rightIcon && <span className={iconSizes[size]}>{rightIcon}</span>}
     </Comp>
   );
 }
