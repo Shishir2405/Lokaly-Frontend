@@ -7,6 +7,7 @@ import {
   HiOutlinePlayCircle,
 } from "react-icons/hi2";
 import Button from "../components/ui/Button";
+import MediaUploader from "../components/ui/MediaUploader";
 import { Reveal } from "../components/animations/Reveal";
 
 const SCRIPTS = [
@@ -45,18 +46,10 @@ const TRACKS = [
 ];
 
 export default function StoryToReel() {
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState("");
   const [playing, setPlaying] = useState(false);
   const [frame, setFrame] = useState(0);
   const [track, setTrack] = useState(TRACKS[0].id);
-
-  function onFile(e) {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => setImage(reader.result);
-    reader.readAsDataURL(f);
-  }
 
   function play() {
     setPlaying(true);
@@ -170,14 +163,14 @@ export default function StoryToReel() {
                 Upload a photo
               </h4>
             </div>
-            <label className="block">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={onFile}
-                className="block w-full text-[11px] font-jakarta text-ink/70 file:mr-2 file:rounded-full file:border-0 file:bg-ink file:text-cream file:px-3 file:py-1.5 file:text-[10px] file:font-semibold file:cursor-pointer file:hover:bg-ink/90 cursor-pointer"
-              />
-            </label>
+            <MediaUploader
+              value={image}
+              onChange={setImage}
+              accept="image/*"
+              maxSizeMB={10}
+              uploadUrl="/api/upload/image"
+              fieldName="image"
+            />
           </div>
 
           {/* Step 2 — audio picker */}

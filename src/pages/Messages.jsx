@@ -5,6 +5,7 @@ import {
   HiOutlinePaperAirplane,
   HiOutlineChatBubbleLeftRight,
   HiOutlineSparkles,
+  HiOutlinePlus,
 } from "react-icons/hi2";
 import dayjs from "dayjs";
 import api from "../services/api";
@@ -15,6 +16,7 @@ import { Spinner } from "../components/ui/Spinner";
 import { EmptyState } from "../components/ui/EmptyState";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
+import StartChatModal from "../components/StartChatModal";
 import toast from "react-hot-toast";
 
 export default function Messages() {
@@ -25,6 +27,7 @@ export default function Messages() {
   const [faqSuggest, setFaqSuggest] = useState(null);
   const [typingPeer, setTypingPeer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [newChatOpen, setNewChatOpen] = useState(false);
   const [params] = useSearchParams();
   const scrollRef = useRef(null);
   const user = useAuthStore((s) => s.user);
@@ -142,6 +145,51 @@ export default function Messages() {
     });
   }
 
+  async function handleNewChatSelected(arg, maybeUser) {
+    // StartChatModal may hand us either a user (to open) or an already-opened
+    // conversation (its participants array tells us which).
+    let conv = null;
+    let picked = null;
+
+    if (arg && Array.isArray(arg.participants)) {
+      conv = arg;
+      picked = maybeUser || null;
+    } else if (arg?._id) {
+      picked = arg;
+      try {
+        const { data } = await api.get(
+          `/chat/conversations/with/${arg._id}`,
+        );
+        conv = data?.conversation || data;
+      } catch (e) {
+        toast.error(e.response?.data?.error || "Could not open conversation");
+        return;
+      }
+    }
+
+    if (!conv?._id) return;
+
+    setConvos((prev) => {
+      if (prev.some((c) => c.id === conv._id)) return prev;
+      const other =
+        conv.participants?.find(
+          (p) => String(p._id) !== String(user?._id),
+        ) || picked;
+      return [
+        {
+          id: conv._id,
+          other,
+          lastMessage: conv.lastMessage,
+          unread: 0,
+          updatedAt: conv.updatedAt,
+        },
+        ...prev,
+      ];
+    });
+    setActiveId(conv._id);
+    setNewChatOpen(false);
+  }
+
   function onTyping(v) {
     setText(v);
     if (!active) return;
@@ -173,13 +221,23 @@ export default function Messages() {
       <div className="grid md:grid-cols-[280px_1fr] gap-3 min-h-[70vh]">
         {/* Conversations list */}
         <aside className="rounded-2xl bg-white/80 border border-ink/5 overflow-hidden flex flex-col">
-          <div className="px-3 py-2.5 border-b border-ink/5 flex items-center justify-between">
+          <div className="px-3 py-2.5 border-b border-ink/5 flex items-center justify-between gap-2">
             <div className="text-[10px] uppercase tracking-[0.2em] font-jakarta font-semibold text-ink/50">
               Conversations
             </div>
             <span className="text-[10px] text-ink/45 font-jakarta">
               {convos.length}
             </span>
+          </div>
+          <div className="px-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setNewChatOpen(true)}
+              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-ink text-cream dark:bg-coral dark:text-white font-jakarta font-semibold text-[11px] py-2 hover:opacity-90 transition"
+            >
+              <HiOutlinePlus className="text-sm" />
+              New Chat
+            </button>
           </div>
           <div className="flex-1 overflow-auto p-2">
             {convos.length === 0 ? (
@@ -340,6 +398,12 @@ export default function Messages() {
           )}
         </section>
       </div>
+
+      <StartChatModal
+        open={newChatOpen}
+        onClose={() => setNewChatOpen(false)}
+        onSelect={handleNewChatSelected}
+      />
     </div>
   );
 }

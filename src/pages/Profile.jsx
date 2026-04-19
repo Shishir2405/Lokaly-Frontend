@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useParams, Link, Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   HiOutlineMapPin,
@@ -17,6 +17,7 @@ import TrustGraph from "../components/TrustGraph";
 import ProductCard from "../components/ProductCard";
 import PostCard from "../components/PostCard";
 import { MasonryGrid } from "../components/ui/Masonry";
+import VerifiedBadge from "../components/VerifiedBadge";
 import { useAuthStore } from "../store/authStore";
 
 const TABS = [
@@ -27,6 +28,7 @@ const TABS = [
 
 export default function Profile() {
   const params = useParams();
+  const navigate = useNavigate();
   const me = useAuthStore((s) => s.user);
   const token = useAuthStore((s) => s.token);
   const isMe = params.id === "me";
@@ -55,6 +57,7 @@ export default function Profile() {
   const [reviews, setReviews] = useState([]);
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [openingChat, setOpeningChat] = useState(false);
 
   // Keep the seeded user in sync if the auth me hydrates/changes while we're on the page.
   useEffect(() => {
@@ -188,10 +191,18 @@ export default function Profile() {
               aura={user.trustScore}
             />
             <div className="flex-1 min-w-0">
-              <div className="text-[10px] uppercase tracking-[0.25em] font-jakarta font-semibold text-ink/60 mb-2">
-                {user.role === "seller" ? "Seller profile" : "Buyer profile"}
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                <span
+                  className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.18em] font-jakarta font-semibold ${
+                    user.role === "seller"
+                      ? "bg-coral/15 text-coral dark:bg-coral/25 dark:text-white"
+                      : user.role === "admin"
+                        ? "bg-mauve/15 text-mauve dark:bg-mauve/25"
+                        : "bg-mint/40 text-leaf dark:bg-mint/20 dark:text-mint"
+                  }`}
+                >
+                  {user.role || "user"}
+                </span>
                 {user.isVerifiedSeller && (
                   <Badge tone="mint" icon={<HiOutlineShieldCheck />}>
                     Verified
@@ -206,26 +217,46 @@ export default function Profile() {
                   <Badge tone="coral">Local hero</Badge>
                 )}
               </div>
-              <h1 className="font-fraunces text-3xl md:text-4xl text-ink mt-2 tracking-tight">
-                {user.shopName || user.name}
+              <h1 className="font-fraunces text-3xl md:text-4xl text-ink dark:text-cream mt-2 tracking-tight flex items-center gap-2 flex-wrap">
+                <span>{user.shopName || user.name}</span>
+                <VerifiedBadge
+                  isVerifiedSeller={!!user.isVerifiedSeller}
+                  size={20}
+                />
               </h1>
-              <div className="mt-1.5 text-xs text-ink/65 font-jakarta flex items-center gap-1.5">
+              <div className="mt-1.5 text-xs text-ink/65 dark:text-cream/60 font-jakarta flex items-center gap-1.5">
                 <HiOutlineMapPin className="text-sm" />
                 {user.location?.city || "India"}
               </div>
               {user.bio && (
-                <p className="mt-3 max-w-lg text-xs text-ink/70 font-jakarta leading-relaxed">
+                <p className="mt-3 max-w-lg text-xs text-ink/70 dark:text-cream/70 font-jakarta leading-relaxed">
                   {user.bio}
                 </p>
               )}
             </div>
             {me && me._id !== id && (
-              <Link
-                to={`/messages?to=${id}`}
-                className="rounded-full bg-ink text-cream font-jakarta font-semibold text-xs px-5 py-2.5 inline-flex items-center gap-1.5 hover:bg-ink/90 transition shrink-0"
+              <button
+                type="button"
+                onClick={async () => {
+                  if (openingChat) return;
+                  setOpeningChat(true);
+                  try {
+                    await api.get(`/chat/conversations/with/${id}`);
+                  } catch (e) {
+                    // best-effort: still navigate — Messages page also tries to open
+                    // eslint-disable-next-line no-console
+                    console.warn("[Profile] open-conversation failed", e?.message);
+                  } finally {
+                    setOpeningChat(false);
+                    navigate(`/messages?to=${id}`);
+                  }
+                }}
+                disabled={openingChat}
+                className="rounded-full bg-ink text-cream dark:bg-coral dark:text-white font-jakarta font-semibold text-xs px-5 py-2.5 inline-flex items-center gap-1.5 hover:opacity-90 transition shrink-0 disabled:opacity-50"
               >
-                <HiOutlineChatBubbleLeftRight className="text-sm" /> Message
-              </Link>
+                <HiOutlineChatBubbleLeftRight className="text-sm" />
+                {openingChat ? "Opening..." : "Message"}
+              </button>
             )}
           </div>
         </div>
@@ -242,8 +273,8 @@ export default function Profile() {
                 onClick={() => setTab(t.key)}
                 className={`px-3 py-1.5 rounded-full font-jakarta font-semibold text-xs transition border shrink-0 ${
                   tab === t.key
-                    ? "bg-ink text-cream border-ink"
-                    : "bg-white/60 border-ink/5 text-ink/70 hover:border-ink/20"
+                    ? "bg-ink text-cream border-ink dark:bg-coral dark:border-coral dark:text-white"
+                    : "bg-white/60 dark:bg-white/5 border-ink/5 dark:border-white/10 text-ink/70 dark:text-cream/70 hover:border-ink/20"
                 }`}
               >
                 {t.label}
@@ -279,14 +310,14 @@ export default function Profile() {
                 <div className="grid md:grid-cols-2 gap-3">
                   {reviews.map((r) => (
                     <Reveal key={r._id}>
-                      <div className="rounded-2xl bg-white/80 border border-ink/5 p-4">
+                      <div className="rounded-2xl bg-white/80 dark:bg-white/5 border border-ink/5 dark:border-white/10 p-4">
                         <div className="flex items-center gap-2">
                           <Avatar
                             src={r.buyer?.avatar}
                             name={r.buyer?.name}
                             size="xs"
                           />
-                          <div className="flex-1 text-xs font-jakarta font-semibold text-ink truncate">
+                          <div className="flex-1 text-xs font-jakarta font-semibold text-ink dark:text-cream truncate">
                             {r.buyer?.name}
                           </div>
                           <div className="flex items-center text-[11px]">
@@ -296,7 +327,7 @@ export default function Profile() {
                                 className={
                                   i < r.rating
                                     ? "text-tangerine"
-                                    : "text-ink/15"
+                                    : "text-ink/15 dark:text-cream/20"
                                 }
                               />
                             ))}
@@ -308,7 +339,7 @@ export default function Profile() {
                         >
                           On {r.product?.title}
                         </Link>
-                        <p className="mt-1.5 text-[12px] text-ink/75 font-jakarta leading-relaxed">
+                        <p className="mt-1.5 text-[12px] text-ink/75 dark:text-cream/75 font-jakarta leading-relaxed">
                           {r.text}
                         </p>
                       </div>
@@ -328,11 +359,11 @@ export default function Profile() {
               verified={user.isVerifiedSeller}
             />
           )}
-          <div className="rounded-2xl bg-butter/50 border border-ink/5 p-4">
-            <div className="text-[10px] uppercase tracking-[0.2em] font-jakarta font-semibold text-ink/50 mb-2">
+          <div className="rounded-2xl bg-butter/50 dark:bg-white/5 border border-ink/5 dark:border-white/10 p-4">
+            <div className="text-[10px] uppercase tracking-[0.2em] font-jakarta font-semibold text-ink/50 dark:text-cream/50 mb-2">
               About this shop
             </div>
-            <p className="text-xs text-ink/70 font-jakarta leading-relaxed">
+            <p className="text-xs text-ink/70 dark:text-cream/70 font-jakarta leading-relaxed">
               Every shop on Lokaly earns trust one review, one delivery, one
               namaste at a time.
             </p>

@@ -1,4 +1,4 @@
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import MainLayout, {
@@ -6,10 +6,14 @@ import MainLayout, {
   LiveStream, Messages, Profile, Login, Signup, Coins, Leaderboard, Dashboard,
   ARTryOn, VoiceShop, CoHosts, StoryToReel, CollabRoom, NotFound,
 } from './routes';
+
+const BuyerDashboard = lazy(() => import('./pages/BuyerDashboard.jsx'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail.jsx'));
 import { Spinner } from './components/ui/Spinner';
 import AIShopperPanel from './features/aiShopper/AIShopperPanel';
 import api from './services/api';
 import { useAuthStore } from './store/authStore';
+import { ThemeProvider } from './context/ThemeContext';
 import { bootGoogleTranslate } from './lib/googleTranslate';
 
 function Booting() {
@@ -56,7 +60,7 @@ export default function App() {
   }, [token, hydrate, logout]);
 
   return (
-    <>
+    <ThemeProvider>
       <Toaster
         position="top-center"
         toastOptions={{
@@ -82,6 +86,7 @@ export default function App() {
             <Route path="/coins" element={<Coins />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
             <Route path="/ar-tryon" element={<ARTryOn />} />
             <Route path="/voice" element={<VoiceShop />} />
             <Route path="/cohosts" element={<CoHosts />} />
@@ -90,9 +95,10 @@ export default function App() {
           </Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
-    </>
+    </ThemeProvider>
   );
 }

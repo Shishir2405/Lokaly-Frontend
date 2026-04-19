@@ -10,6 +10,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { Modal } from "../components/ui/Modal";
 import Input from "../components/ui/Input";
 import Button from "../components/ui/Button";
+import MediaUploader from "../components/ui/MediaUploader";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
 
@@ -243,68 +244,38 @@ function PostModal({ post, onClose }) {
 
 function ComposeModal({ open, onClose, onPosted }) {
   const [caption, setCaption] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [uploading, setUploading] = useState(false);
+  const [media, setMedia] = useState([]); // [{url, publicId}]
 
   async function submit(e) {
     e.preventDefault();
-    if (!caption && !imageUrl) return;
+    if (!caption && media.length === 0) return;
     try {
       const { data } = await api.post("/posts", {
         caption,
-        kind: "photo",
-        media: imageUrl ? [{ url: imageUrl, kind: "image" }] : [],
+        kind: media.length > 0 ? "photo" : "text",
+        media: media.map((m) => ({ url: m.url, kind: "image" })),
       });
       onPosted(data.post);
       setCaption("");
-      setImageUrl("");
+      setMedia([]);
     } catch (err) {
       toast.error(err.response?.data?.error || "Could not post");
-    }
-  }
-
-  async function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
-    setUploading(true);
-    try {
-      const { data } = await api.post("/upload/image", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setImageUrl(data.url);
-    } catch (err) {
-      toast.error("Upload failed");
-    } finally {
-      setUploading(false);
     }
   }
 
   return (
     <Modal open={open} onClose={onClose} title="Create post">
       <form onSubmit={submit} className="space-y-3">
-        <label className="block">
-          <span className="block mb-1.5 text-xs font-jakarta font-semibold text-ink/75">
-            Image
-          </span>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFile}
-            className="text-xs"
-          />
-          {uploading && (
-            <span className="text-[11px] text-mauve ml-2">Uploading...</span>
-          )}
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt=""
-              className="mt-2 w-full max-h-64 object-cover rounded-xl"
-            />
-          )}
-        </label>
+        <MediaUploader
+          label="Media"
+          value={media}
+          onChange={setMedia}
+          multiple
+          accept="image/*"
+          maxFiles={6}
+          uploadUrl="/api/upload/images"
+          fieldName="images"
+        />
         <Input
           label="Caption"
           value={caption}

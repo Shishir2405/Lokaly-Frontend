@@ -2,12 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-
-.VIpgJd-ZVi9od-ORHb{
-    display: none !important;
-    opacity: 0 !important;
+/* Dark-mode base tweaks. The `ink` color already exists; just ensure sensible
+   defaults so `bg-white dark:bg-ink` style works everywhere. */
+html.dark body {
+  background-color: #1F1A2B;
+  background-image: none;
+  color: #FAF6EF;
 }
 
-.skiptranslate{
-    display: none !important;
+html.dark {
+  color-scheme: dark;
+}
+
+/* --- Google Translate / accessibility widget --- */
+/* Only hide the top banner iframe Google injects; keep the dropdown/button
+   UI fully visible and interactive (including on hover). */
+.skiptranslate iframe.goog-te-banner-frame,
+iframe.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+/* Prevent Google Translate's banner from pushing the body down. */
+body {
+  top: 0 !important;
+}
+
+/* Make sure the a11y / translate button stays solid on hover/focus. */
+.VIpgJd-ZVi9od-ORHb,
+.VIpgJd-ZVi9od-ORHb:hover,
+.VIpgJd-ZVi9od-ORHb:focus,
+.a11y-widget,
+.a11y-widget:hover,
+.a11y-widget:focus {
+  opacity: 1 !important;
+  filter: none !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+/* High-contrast visible a11y button in both themes */
+.a11y-widget {
+  background-color: #1F1A2B;
+  color: #FAF6EF;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 24px -10px rgba(31, 26, 43, 0.35);
+}
+html.dark .a11y-widget {
+  background-color: #FAF6EF;
+  color: #1F1A2B;
+  border-color: rgba(31, 26, 43, 0.2);
+}
+.a11y-widget:hover {
+  transform: translateY(-1px);
+}
+
+/* Kill Google Translate's hover tooltip that covers the page */
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-text-highlight {
+  display: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }

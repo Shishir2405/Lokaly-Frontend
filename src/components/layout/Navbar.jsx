@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   SUPPORTED_LANGS,
@@ -14,13 +14,29 @@ import {
   HiOutlineBell,
   HiOutlineBars3,
   HiOutlineXMark,
+  HiOutlineUserCircle,
+  HiOutlineSquares2X2,
+  HiOutlineSun,
+  HiOutlineMoon,
+  HiOutlineArrowRightOnRectangle,
 } from "react-icons/hi2";
 import { FiUser } from "react-icons/fi";
 import { Avatar } from "../ui/Avatar";
 import { useAuthStore } from "../../store/authStore";
 import { useCartStore } from "../../store/cartStore";
 import CoinsWidget from "../../features/coins/CoinsWidget";
-import { useEffect, useState } from "react";
+import ThemeToggle from "../ThemeToggle";
+import VerifiedBadge from "../VerifiedBadge";
+import { useTheme } from "../../context/ThemeContext";
+import { useEffect, useRef, useState } from "react";
+
+function renderVerifiedBadge(user, size = 12) {
+  if (!user) return null;
+  const verified = user.isVerifiedSeller === true || user.isEmailVerified === true;
+  if (!verified) return null;
+  const title = user.isVerifiedSeller === true ? "Verified seller" : "Email verified";
+  return <VerifiedBadge isVerifiedSeller size={size} title={title} />;
+}
 
 const links = [
   { to: "/feed", label: "Feed", icon: HiOutlineSparkles },
@@ -29,13 +45,57 @@ const links = [
   { to: "/leaderboard", label: "Leaderboard", icon: HiOutlineGlobeAlt },
 ];
 
+function resolveRole(user) {
+  if (user?.role) return user.role;
+  try {
+    const raw = localStorage.getItem("lokaly.user");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.role) return parsed.role;
+    }
+  } catch (_) {}
+  return "buyer";
+}
+
+function resolveUserId(user) {
+  return user?._id || user?.id || "me";
+}
+
 export default function Navbar() {
   const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const { cart, fetch } = useCartStore();
   const cartCount = (cart?.items || []).reduce((s, i) => s + i.quantity, 0);
+  const navigate = useNavigate();
+  const { theme, toggle: toggleTheme } = useTheme();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [profileOpen]);
+
+  const role = resolveRole(user);
+  const myId = resolveUserId(user);
+  const dashboardPath =
+    role === "buyer" ? "/buyer/dashboard" : "/dashboard";
+
+  const handleLogout = () => {
+    setProfileOpen(false);
+    logout();
+    try { localStorage.removeItem("lokaly.user"); } catch (_) {}
+    navigate("/login");
+  };
 
   useEffect(() => {
     if (user) fetch();
@@ -54,7 +114,7 @@ export default function Navbar() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="sticky top-0 z-40 backdrop-blur-xl bg-cream/80 border-b border-ink/5"
+        className="sticky top-0 z-40 backdrop-blur-xl bg-cream/80 dark:bg-ink/80 border-b border-ink/5 dark:border-white/5"
       >
         <div className="max-w-7xl mx-auto px-3 lg:px-6 py-2 flex items-center gap-2 lg:gap-3">
           <Link to="/" className="flex items-center gap-1.5 shrink-0">
@@ -130,21 +190,82 @@ export default function Navbar() {
           </Link>
 
           <button
-            className="hidden sm:grid w-8 h-8 place-items-center rounded-full hover:bg-peach/60 text-ink shrink-0"
+            className="hidden sm:grid w-8 h-8 place-items-center rounded-full hover:bg-peach/60 dark:hover:bg-white/10 text-ink dark:text-cream shrink-0"
             aria-label="Notifications"
           >
             <HiOutlineBell className="text-base" />
           </button>
 
+          <ThemeToggle />
+
           {user ? (
-            <Link to="/profile/me" className="shrink-0">
-              <Avatar
-                src={user.avatar}
-                name={user.name}
-                size="xs"
-                aura={user.trustScore}
-              />
-            </Link>
+            <div className="relative shrink-0" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen((v) => !v)}
+                aria-label="Profile menu"
+                aria-haspopup="menu"
+                aria-expanded={profileOpen}
+                className="rounded-full focus:outline-none focus:ring-2 focus:ring-coral/50"
+              >
+                <Avatar
+                  src={user.avatar}
+                  name={user.name}
+                  size="xs"
+                  aura={user.trustScore}
+                />
+              </button>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                    transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                    role="menu"
+                    className="absolute right-0 mt-2 w-56 rounded-2xl bg-cream dark:bg-ink border border-ink/5 dark:border-white/10 shadow-xl p-1 z-50"
+                  >
+                    <div className="px-3 py-2 border-b border-ink/5 dark:border-white/10">
+                      <div className="font-jakarta font-semibold text-xs text-ink dark:text-cream truncate flex items-center gap-1">
+                        <span className="truncate">{user.name || "You"}</span>
+                        {renderVerifiedBadge(user, 12)}
+                      </div>
+                      <div className="text-[10px] uppercase tracking-wider font-jakarta font-semibold text-ink/50 dark:text-cream/50 mt-0.5">
+                        {role}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate(`/profile/${myId}`); }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-jakarta font-semibold text-ink/80 dark:text-cream/80 hover:bg-peach/60 dark:hover:bg-white/10 transition"
+                      role="menuitem"
+                    >
+                      <HiOutlineUserCircle className="text-base" /> View Profile
+                    </button>
+                    <button
+                      onClick={() => { setProfileOpen(false); navigate(dashboardPath); }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-jakarta font-semibold text-ink/80 dark:text-cream/80 hover:bg-peach/60 dark:hover:bg-white/10 transition"
+                      role="menuitem"
+                    >
+                      <HiOutlineSquares2X2 className="text-base" /> Dashboard
+                    </button>
+                    <button
+                      onClick={() => { toggleTheme(); }}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-jakarta font-semibold text-ink/80 dark:text-cream/80 hover:bg-peach/60 dark:hover:bg-white/10 transition"
+                      role="menuitem"
+                    >
+                      {theme === "dark" ? <HiOutlineSun className="text-base" /> : <HiOutlineMoon className="text-base" />}
+                      Theme: {theme === "dark" ? "Dark" : "Light"}
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-jakarta font-semibold text-coral hover:bg-coral/10 transition"
+                      role="menuitem"
+                    >
+                      <HiOutlineArrowRightOnRectangle className="text-base" /> Logout
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           ) : (
             <Link
               to="/login"
@@ -226,9 +347,9 @@ export default function Navbar() {
               <nav className="flex-1 overflow-y-auto px-3 py-3">
                 {user ? (
                   <Link
-                    to="/profile/me"
+                    to={`/profile/${myId}`}
                     onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 border border-ink/5 mb-3"
+                    className="flex items-center gap-2.5 p-2.5 rounded-xl bg-white/70 dark:bg-white/5 border border-ink/5 dark:border-white/10 mb-3"
                   >
                     <Avatar
                       src={user.avatar}
@@ -237,8 +358,9 @@ export default function Navbar() {
                       aura={user.trustScore}
                     />
                     <div className="min-w-0">
-                      <div className="font-jakarta font-semibold text-ink text-xs truncate">
-                        {user.name}
+                      <div className="font-jakarta font-semibold text-ink text-xs truncate flex items-center gap-1">
+                        <span className="truncate">{user.name}</span>
+                        {renderVerifiedBadge(user, 12)}
                       </div>
                       <div className="text-[10px] text-ink/55 font-jakarta mt-0.5">
                         View profile →
