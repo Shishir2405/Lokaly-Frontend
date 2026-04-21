@@ -57,20 +57,20 @@ export default function Coins() {
         <div className="text-[10px] uppercase tracking-[0.25em] font-jakarta font-semibold text-coral mb-2">
           Rewards wallet
         </div>
-        <h1 className="font-fraunces text-2xl md:text-3xl text-ink tracking-tight mb-6">
+        <h1 className="font-fraunces text-2xl md:text-3xl text-ink dark:text-cream tracking-tight mb-6">
           Community Coins
         </h1>
 
         {/* Balance card */}
-        <div className="rounded-2xl bg-gradient-to-br from-butter to-peach p-6 text-ink relative overflow-hidden border border-ink/5">
+        <div className="rounded-2xl bg-gradient-to-br from-butter to-peach dark:from-[#3A3526] dark:to-[#3A2E44] p-6 text-ink dark:text-cream relative overflow-hidden border border-ink/5 dark:border-white/10">
           <motion.div
             animate={{ rotate: [0, 8, -6, 0] }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-white/25"
+            className="absolute -top-10 -right-10 w-36 h-36 rounded-full bg-white/25 dark:bg-white/5"
           />
           <div className="relative">
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-white/60 grid place-items-center text-tangerine text-xl">
+              <div className="w-10 h-10 rounded-xl bg-white/60 dark:bg-white/10 grid place-items-center text-tangerine text-xl">
                 <TbCoins />
               </div>
               <div className="text-[10px] uppercase tracking-[0.2em] font-jakarta font-semibold text-ink/60">
@@ -121,7 +121,7 @@ export default function Coins() {
             <div className="text-[10px] uppercase tracking-[0.25em] font-jakarta font-semibold text-ink/50 mb-1">
               Activity
             </div>
-            <h3 className="font-fraunces text-xl text-ink tracking-tight flex items-center gap-2">
+            <h3 className="font-fraunces text-xl text-ink dark:text-cream tracking-tight flex items-center gap-2">
               <HiOutlineClipboardDocumentList className="text-mauve" />
               Ledger
             </h3>
@@ -139,14 +139,14 @@ export default function Coins() {
             hint="Leave a review to earn your first coins"
           />
         ) : (
-          <div className="rounded-2xl bg-white/70 border border-ink/5 divide-y divide-ink/5 overflow-hidden">
+          <div className="rounded-2xl bg-white/70 dark:bg-white/5 border border-ink/5 dark:border-white/10 divide-y divide-ink/5 dark:divide-white/10 overflow-hidden">
             {items.map((it) => (
               <motion.div
                 key={it._id}
                 initial={{ opacity: 0, x: -4 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="px-4 py-3 flex items-center gap-3 hover:bg-white/50 transition"
+                className="px-4 py-3 flex items-center gap-3 hover:bg-white/50 dark:hover:bg-white/10 transition"
               >
                 <span
                   className={`w-8 h-8 rounded-full grid place-items-center shrink-0 ${
@@ -162,7 +162,7 @@ export default function Coins() {
                   )}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-jakarta font-semibold text-xs text-ink truncate">
+                  <div className="font-jakarta font-semibold text-xs text-ink dark:text-cream truncate">
                     {REASON_LABELS[it.reason] || it.reason}
                   </div>
                   <div className="text-[10px] text-ink/45 font-jakarta mt-0.5">
