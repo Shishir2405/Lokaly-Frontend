@@ -284,8 +284,6 @@ export default function ProductFormModal({
             multiple
             accept="image/*"
             maxFiles={8}
-            uploadUrl="/api/upload/images"
-            fieldName="images"
           />
           {errors.images && (
             <span className="block mt-1 text-[11px] text-coral font-jakarta font-medium">
@@ -305,7 +303,7 @@ export default function ProductFormModal({
             maxFiles={4}
             maxSizeMB={50}
             uploadUrl="/api/upload/video"
-            fieldName="video"
+            fieldName="file"
           />
         </div>
 

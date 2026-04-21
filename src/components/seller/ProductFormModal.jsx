@@ -202,8 +202,6 @@ export default function ProductFormModal({ open, onClose, onSaved, product }) {
             multiple
             accept="image/*"
             maxFiles={8}
-            uploadUrl="/api/upload/images"
-            fieldName="images"
           />
           {errors.images && (
             <span className="block mt-1 text-[11px] text-coral font-jakarta font-medium">

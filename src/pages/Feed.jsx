@@ -273,8 +273,6 @@ function ComposeModal({ open, onClose, onPosted }) {
           multiple
           accept="image/*"
           maxFiles={6}
-          uploadUrl="/api/upload/images"
-          fieldName="images"
         />
         <Input
           label="Caption"

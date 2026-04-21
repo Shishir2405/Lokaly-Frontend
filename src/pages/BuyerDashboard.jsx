@@ -871,8 +871,6 @@ function SettingsTab({ user, onSaved }) {
           onChange={setAvatar}
           variant="avatar"
           accept="image/*"
-          uploadUrl="/api/upload/image"
-          fieldName="image"
           maxSizeMB={5}
         />
         <div className="flex-1 min-w-0">

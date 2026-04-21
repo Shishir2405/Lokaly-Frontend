@@ -19,35 +19,37 @@ import { cn } from "../../lib/cn";
 /**
  * Normalize a backend upload response into a flat array of { url, publicId }.
  */
+const API_ORIGIN = (() => {
+  const raw = import.meta.env.VITE_API_URL;
+  if (!raw) return "";
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return "";
+  }
+})();
+
+function absolutizeUrl(url) {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url) || url.startsWith("data:")) return url;
+  if (url.startsWith("/") && API_ORIGIN) return `${API_ORIGIN}${url}`;
+  return url;
+}
+
 function normalizeUploadResponse(data) {
   if (!data) return [];
-  if (Array.isArray(data)) {
-    return data
-      .map((x) => (x?.url ? { url: x.url, publicId: x.publicId } : null))
-      .filter(Boolean);
-  }
-  if (data.images && Array.isArray(data.images)) {
-    return data.images
-      .map((x) => (x?.url ? { url: x.url, publicId: x.publicId } : null))
-      .filter(Boolean);
-  }
-  if (data.items && Array.isArray(data.items)) {
-    return data.items
-      .map((x) => (x?.url ? { url: x.url, publicId: x.publicId } : null))
-      .filter(Boolean);
-  }
-  if (data.image && data.image.url) {
-    return [{ url: data.image.url, publicId: data.image.publicId }];
-  }
-  if (data.video && data.video.url) {
-    return [{ url: data.video.url, publicId: data.video.publicId }];
-  }
-  if (data.item && data.item.url) {
-    return [{ url: data.item.url, publicId: data.item.publicId }];
-  }
-  if (data.url) {
-    return [{ url: data.url, publicId: data.publicId }];
-  }
+  const pick = (x) =>
+    x && typeof x === "object" && x.url
+      ? { url: absolutizeUrl(x.url), publicId: x.publicId }
+      : null;
+  if (Array.isArray(data)) return data.map(pick).filter(Boolean);
+  if (Array.isArray(data.files)) return data.files.map(pick).filter(Boolean);
+  if (Array.isArray(data.images)) return data.images.map(pick).filter(Boolean);
+  if (Array.isArray(data.items)) return data.items.map(pick).filter(Boolean);
+  if (data.image?.url) return [pick(data.image)];
+  if (data.video?.url) return [pick(data.video)];
+  if (data.item?.url) return [pick(data.item)];
+  if (data.url) return [pick(data)];
   return [];
 }
 
@@ -107,9 +109,21 @@ export default function MediaUploader({
 }) {
   const token = useAuthStore((s) => s.token);
   const resolvedMaxFiles = maxFiles ?? (multiple ? 8 : 1);
-  const resolvedFieldName = fieldName ?? (multiple ? "images" : "image");
+  const isVideo = (accept || "").includes("video");
+  // Backend multer expects `file` on single endpoints and `files` on array endpoints.
+  const resolvedFieldName = fieldName ?? (multiple ? "files" : "file");
   const resolvedUploadUrl =
-    uploadUrl ?? (multiple ? "/api/upload/images" : "/api/upload/image");
+    uploadUrl ??
+    (multiple
+      ? "/api/upload/images"
+      : isVideo
+      ? "/api/upload/video"
+      : "/api/upload/image");
+  const resolvedFullUrl = /^https?:\/\//i.test(resolvedUploadUrl)
+    ? resolvedUploadUrl
+    : API_ORIGIN
+    ? `${API_ORIGIN}${resolvedUploadUrl}`
+    : resolvedUploadUrl;
 
   const items = useMemo(() => toItemArray(value, multiple), [value, multiple]);
 
@@ -150,7 +164,7 @@ export default function MediaUploader({
         const fd = new FormData();
         fd.append(resolvedFieldName, file);
         const xhr = new XMLHttpRequest();
-        xhr.open("POST", resolvedUploadUrl, true);
+        xhr.open("POST", resolvedFullUrl, true);
         if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
         xhr.upload.onprogress = (ev) => {
           if (!ev.lengthComputable) return;
@@ -200,7 +214,7 @@ export default function MediaUploader({
         xhr.send(fd);
       });
     },
-    [resolvedFieldName, resolvedUploadUrl, token, triggerError],
+    [resolvedFieldName, resolvedFullUrl, token, triggerError],
   );
 
   const handleFiles = useCallback(

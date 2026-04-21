@@ -168,8 +168,6 @@ export default function StoryToReel() {
               onChange={setImage}
               accept="image/*"
               maxSizeMB={10}
-              uploadUrl="/api/upload/image"
-              fieldName="image"
             />
           </div>
 
